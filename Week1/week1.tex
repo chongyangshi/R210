@@ -1,0 +1,61 @@
+\documentclass[11pt]{article}
+\usepackage{a4wide,parskip}
+\usepackage{hyperref}
+\usepackage{titlesec}
+
+\titleformat{\section}{\normalfont\fontsize{12}{15}\bfseries}{\thesection}{1em}{}
+
+\begin{document}
+
+\centerline{\Large R210 Essay:  Encrypted data systems}
+\vspace{2em}
+\centerline{\large Chongyang Shi (\emph{cs940})}
+\vspace{1em}
+\centerline{\large \today}
+\vspace{1em}
+
+\section{Summaries of research}
+
+In 2014, Popa et al. \cite{popa2014building} described the design of a searchable encryption framework called \emph{Mylar}, which allows application developers to integrate encrypted storage of data without significantly refactoring their code. Theoretically, stored data can only be read by the client, but remains searchable by the server on client request. The designed operational model also provides client-side code verification to protect the server from malicious clients. Mylar was proposed as a solution to some usability problems faced by encrypted data systems such as permission control, searchability and client verification. However, Mylar's design suffers from some significant drawbacks, such as the lack of access revocation, as well as stringent and potentially overbearing security requirements on application developers (e.g. difficulties in integrating complex access graphs) and users (e.g. user must verify HTTPS access).
+
+Two years after Mylar was proposed, Grubbs et al. \cite{grubbs2016breaking} published a paper to illustrate various flaws they discovered in Mylar through passive and aggressive attacks, based on compromised access of varying severity, under which Mylar should have provided security assurance by definition. They were able to infer some user information based on passively observed data in some experiments; and through the introduction of a malicious server, perform brute-force dictionary attacks to decipher a majority of encrypted data when given sufficiently large number of past user queries. These attacks compromised several security guarantees supposedly provided by Mylar's underlying model, prompting discussions on whether property-preserving encryption (PPE) schemes are fundamentally insecure.
+
+Durak et al. \cite{durak2016else} studied information leakage in order-revealing encryption (ORE), which is a similar type of encryption to PPE, but rather reveals ordering information of data to enable more efficient database operations at the cost of security. Through various attacks performed on two datasets encrypted with ORE, they were able to demonstrate that correlations between columns of data as well as known contextual information can reveal more information than previously modelled by various leakage profiles. Performing attacks developed in this research on more datasets also fitting the paper's description can be useful in further illustrating their effectiveness.
+
+\section{Key themes of research}
+
+\subsection{Usability considerations sometimes hinder security assurance}
+
+As all encrypted data systems involve users that may or may not be technically proficient, the security of the system can be influenced by usability considerations. To improve user experience, a lot of applications do very little to validate the identity of the user beyond their login credentials, weakening the protection against active attacks offered by an integrated Mylar framework (since a trusted identity service provider will be unavailable in most cases) \cite[3.1]{popa2014building}. As observed by Grubbs et al. \cite[3.3]{grubbs2016breaking}, it is also difficult to model updates to documents in Mylar. This is a feature required by users in most practical applications. They further observed \cite[8.1]{grubbs2016breaking} that asking the user to confirm every shared document can be very damaging to usability, but is required by Mylar to prevent malicious server attacks. In the research by Durak et al. \cite[Sec. 3]{durak2016else}, the ability for the user to enter correlated data over multiple columns (e.g. geographical coordinates) is often required in practice, but was found to reveal further information in inter-column correlation attacks on ORE systems.
+
+\subsection{Security degradation from specifications to their implementations}
+
+The implementation of a encrypted data system often deviate from its specification in practice, which may have a negative impact on security. In the design of Mylar \cite[4.1]{popa2014building}, transitive access permissions combined with chained encryption can cause problems when implemented improperly, or when revocations are required (as clients can cache the private keys they gained access to). Grubbs et al. \cite[5.1]{grubbs2016breaking} observed that it was difficult for application developers to reach correct security decisions when integrating an implementation. Durak et al. \cite[Sec. 4]{durak2016else} also found that existing ORE leakage profiles may have underestimated information leakage in implementations, as ORE specifications were not designed to obfuscate unexpected orderings or contextual information often found in data.
+
+\subsection{Additional knowledge of encrypted data can increase leakage}
+ 
+Mylar seeks to prevent the server from learning the content of the user's search requests with a token-based encryption system \cite[5.1]{popa2014building}. Unfortunately, Grubbs et al. \cite{grubbs2016breaking} discovered that a malicious server can gain additional knowledge of the content by forcefully assigning users to shared documents, enabled by the flawed implementation of sharing acceptance in Mylar. The additional knowledge allowed the server to eventually deduce a majority of the text content being searched. Several of ORE attacks devised by Durak et al. \cite[Sec. 4]{durak2016else} also utilised additional knowledge in geographical and time-series representations to accurately approximate encrypted ORE data. 
+ 
+\section{Ideas in current context}
+
+None of the designers of Mylar participated in the follow-up research by Grubbs et al. \cite{grubbs2016breaking}, which revealed security vulnerabilities in Mylar's design under passive and active attacks. There however have been correspondence between the two groups of researchers in reference to the vulnerabilities raised \cite{mylar-response} \cite{mylar-response-response}. Disagreements focused on three aspects: whether the underlying security model of Mylar was already proved to be insufficient by Curtmola et al. \cite{curtmola2006searchable} in 2006; whether Mylar's implementation of active attack protection was flawed; and whether Mylar's statements of security assurances had been altered. Merits of these arguments are subjects of an ongoing debate.
+
+Mylar utilised searchable symmetric encryption (SSE), a type of property-preserving encryption. An partial solution to the active attack vulnerability raised by Grubbs et al. \cite{grubbs2016breaking} has been proposed by Etemad et al. \cite{etemad2018efficient} very recently, which implemented forward secrecy similar to that used in TLS for SEE, to ensure that newly added files cannot be linked to searches done on previous files, without impacting performance. A security proof has been supplied, subject to verification by other researchers.
+
+An alternative approach to the issue of information leakage as raised by Grubbs et al. \cite{grubbs2016breaking} and Durak et al. \cite{durak2016else} has been developed by Pouliot et al. \cite{pouliot2017strength}, known as \emph{weakly randomized encryption}. In this method, information leakage can be eliminated if a low-entropy distribution can be inferred from all possible values of a column. This is however only effective against passive attacks, which assume that the attacker cannot manipulate users to gain further information.
+
+\section{Literature review}
+
+Hahn and Kerschbaum \cite{hahn2014searchable} developed a method to allow leakage-free updates to files encrypted under searchable encryption, resolving a usability issue in Mylar. While capable of integrity checking itself, Mylar was also suggested as a confidentiality protection complement to integrity protection tools \cite{karapanos2016verena}. Another complementary use of Mylar was suggested by Egorov and Wilkison \cite{egorov2016zerodb} to facilitate data sharing between end-to-end encryption clients.
+
+More recently, Grubbs et al. \cite{grubbs2017leakage} also published an enhancement to order-revealing encryption attacks by Durat et al. \cite[Sec. 4]{durak2016else}, in which they exploited auxiliary information of the data to achieve near-perfect level of information recovery from ORE. Lacharit{\'e} et al. \cite{lacharite2017improved} also devised similar attacks on ORE to achieve a high level of information recovery. A generalised method of attack on searchable encryption to exploit flawed security abstractions in encrypted database management systems was also developed \cite{grubbs2017your} by Grubbs et al.
+
+Attacks on Mylar developed by Grubbs et al. \cite{grubbs2016breaking} were also considered by Herley and Oorschot \cite{herley2017sok} when exploring problems associated with inappropriate assumptions and threat models in security research. Grubbs et al. also made a distinction between snapshot and persistent passive attacks on encrypted data systems, both of which were checked by Fuller et al. \cite{fuller2017sok} against various protected search systems as part of a wider evaluation.
+
+\emph{(1178 words according to texcount.)}
+
+\bibliographystyle{IEEEtran}
+\footnotesize{\bibliography{week1}}
+
+
+\end{document}
