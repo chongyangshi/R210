@@ -16,22 +16,43 @@
 
 \section{Summaries of research}
 
+Published a few years after Karger and Schroeder's evaluation \cite{karger1974multics} of the Multics system -- which discovered a range of security vulnerabilities, a new report by Bell and LaPadula \cite{bell1976secure} gave a comprehensive overview of the then-improved system. Starting with a summary of previous studies on security models in general and on Multics, the authors  formally defined the system's underlying access control model, as well as its definition of security. This was followed by a description of how the mathematical model was implemented in Multics through analogies. Finally, discussions were made on aspects of the security model that could still affect the security assurance of Multics, despite the improvements made. A potential criticism focuses on the outset mathematical analogy in Section III, which could have been more concise by invoking Multics' elements directly.
 
+Later in research of access control, Badger et al. \cite{badger1996domain} published a prototype UNIX access control system with kernel modification known as Domain and Type Enforcement (DTE). Addressing the limitations of Domain Definition Table (DDT) systems in use at the time, the authors set out three design goals of DTE in an effort to simplify configuration and improve cross-host compatibility. The authors described and justified the designs of DTE's configuration language, attribute management, networking capabilities, and NFS interoperability. The implementation of the prototype was also described in detail, along with the state of work for a fully operational DTE-protected UNIX system. The authors concluded with discussions on issues yet to be solved in DTE's design and implementation. Under modern eyes, lack of encryption in DTE's network exchange of control information could lead to information leak and unauthorised modification.
+
+In a 2013 magazine article, Watson \cite{watson2013decade} summarised preceding developments of extensible access control systems. Since the aforementioned efforts, access control systems had shifted towards extensibility due to demands from evolving computing devices. Through the MAC Framework for access control in FreeBSD, Watson contrasted drawbacks of previous systems with extensible design principles of MAC. This was followed with extensive discussions on how access control was implemented in line with the design principles in various contemporary operating systems, as well as the modifications each OS made and their effects. A potential addition to the article is a quantitative evaluation on performance overhead introduced by each access control implementation.
 
 \section{Key themes of research}
 
 \subsection{Hierarchical arrangement of subject and object permissions}
 
+In order to organise subjects (e.g. processes) and objects (accessed items) for formalisable security, a hierarchical structure with recursive mapping \cite[p. 36]{bell1976secure} had been extensively used in access control systems. This was the case for both Multics \cite[p. 12]{bell1976secure} and DTE \cite[pp. 52-55]{badger1996domain}. Each subject-object relation must follow a single path, and mediations were required to resolve hard-link and networking conflicts arose. To reduce complexities and improve performance, the more extensible MAC \cite[p. 57]{watson2013decade} instead introduced the separation of access policies and object labelling.
+
 \subsection{Developing and integrating a security model into a system not designed for security is challenging}
 
+Before modern security threats to computer systems emerged, operating systems were often designed without rigid access control in mind, leading to complexities when access control models need to be integrated, which for Multics had to ``disturb the designed operations as little as possible'' \cite[p. 25]{bell1976secure}. DTE was designed to address such inconveniences in DDT, but left out issues such as unencrypted transmission of control information \cite[pp. 60-61]{badger1996domain}. In contrast, access control systems in modern operating systems such as FreeBSD's MAC were designed with minimal integration and upstream merging complexity \cite[p. 58]{watson2013decade} to mitigate integration challenge.
+
 \subsection{It is tricky to work with trusted subjects}
+
+Trusted subjects have always been a difficult case in access control systems, which can be a system process on which all processes depend \cite[p. 67]{bell1976secure} \cite[p. 48]{badger1996domain}, or a superuser with unrestricted access \cite[p. 60]{watson2013decade}, often forming the weakest link in systems' security. To address this, the MAC Framework replaced kernel privileges checks with fine-grained system privileges that can be specified by policies \cite[p. 59]{watson2013decade}, enabling greater control over trusted subjects in a secure system. 
  
 \section{Ideas in current context}
 
+The attribute-based access control model of Multics influenced the designs of user and file access control systems in many modern systems. User groups and file access permissions in Linux distributions \cite{linuxpermissions} and modern UNIX bear many similarities to that described by Bell and LaPadula in 1976. Similar entity mapping and access level models were also present in the policy syntax of DTE \cite[Fig. 3]{badger1996domain}. Multics' recursive access control lists could be an inspiration for linked access principals in modern encrypted data frameworks such as Mylar \cite[Fig. 3]{popa2014building}. 
+
+In order to exchange access control information between servers that may or may not have DTE, DTE attributes were transmitted in metadata of TCP and UDP packets in cleartext \cite[pp. 60-62]{badger1996domain}, exposing them to unauthorised interception and modification. Prior to the publication of DTE, ideas of transmitting identity information in access control securely were already suggested, such as by Gong \cite{gong1989secure} in 1989. A modern solution to the issue is to implement authentication with encryption and integrity check, such as through TLS \cite{tls}.
+
+Watson \cite[p. 53]{watson2013decade} observed the trend of OS access control shifting from protecting multiple users from each other towards protecting single-user systems. This remains the case five years later. With further popularisation of smartphones and the emergence of Internet-of-Things (IoT) devices, contemporary focuses of access control research include protecting insufficiently secure IoT devices from botnet hijacking \cite[p. 100]{khajuria2017cybersecurity}; and securing mobile operating systems (particularly Android devices with easily-obtained root access) against malicious applications \cite{tam2017evolution}.
+
 \section{Literature review}
 
+The definition of security as well as the inductive process of state transitions leading to its proof, as described by Bell and LaPadula \cite{bell1976secure}, became known as the \emph{Basic Security Theorem}, describing a minimum standard for secure systems. McLean \cite{mclean1985comment} however argued in 1985 that this interpretation is erroneous, as the model was insufficient to model every aspect of the operation of an implementation. Also addressing unsound applications of the model, an axiom-based model was built by Lin \cite{lin1993bell}, significantly reducing the scope of trusted subjects. The inductive process of the model was additionally verified and formalised in Coq by Gureghian et al. \cite{gureghian2003full} in 2013. 
 
-%\emph{(1178 words according to texcount.)}
+Adopting the concept of \emph{sandboxing}, Goldberg et al. \cite{goldberg1996secure} designed an access control mechanism to  protect the operating system from insecure applications, with DTE \cite{badger1996domain} as an inspiration. As an addition to DTE's fixed policy model, Provos \cite{provos2003improving} implemented a flexible policy model through system call interposition to support additional policy-related features. Originally designed for UNIX, many of DTE's features have also been adopted into the unified Linux Security Modules (LSM) framework \cite{morris2002linux} that can be loaded into the Linux kernel.
+
+Watson's design principles for extensible access control \cite[p. 53]{watson2013decade} have been implemented for Android by Heuser et al. \cite{heuser2014asm} as a programmable interface. As a hardware-level support for extensible access control, a RISC instruction set providing application compartmentalisation was proposed by Watson et al. \cite{watson2015cheri} in 2015. Another related idea was \emph{Unikernals} developed by Madhavapeddy et al. \cite{madhavapeddy2013unikernels}, implementing type-safe access control to compartmentalised OCaml applications running on minimised kernels.
+
+\emph{(1120 words according to texcount.)}
 
 \bibliographystyle{IEEEtran}
 \footnotesize{\bibliography{week2}}
