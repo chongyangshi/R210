@@ -1,0 +1,61 @@
+\documentclass[11pt]{article}
+\usepackage{a4wide,parskip}
+\usepackage{hyperref}
+\usepackage{titlesec}
+
+\titleformat{\section}{\normalfont\fontsize{12}{15}\bfseries}{\thesection}{1em}{}
+
+\begin{document}
+
+\centerline{\Large R210 Essay:  Anonymity Systems}
+\vspace{2em}
+\centerline{\large Chongyang Shi (\emph{cs940})}
+\vspace{1em}
+\centerline{\large \today}
+\vspace{1em}
+
+\section{Summaries of research}
+
+Danezis et al. \cite{danezis2003mixminion} developed the Mixminion anonymous mailing protocol, building on earlier protocols including Mixmaster \cite{moller2003mixmaster} and Babel \cite{gulcu1996mixing}.  Mixminion implemented several highly influential features present in future anonymity systems, such as indistinguishable message types, TLS-based forward anonymity, key rotation, and centralised directory servers. After discussing de-anonymisation attacks enabled by pitfalls in predecessors' designs, the authors set out how they designed Mixminion in accordance with their new security and usability goals, most notably the use of a crossover header swap to counter active tagging attacks. Further considerations were given regarding Mixminon's abuse mitigation features and the positive and negative impacts of centralising information distribution through directory servers. The authors concluded with suggestions on future work, some of which have been undertaken by the Tor project as followed.
+
+Designed by Dingledine et al. \cite{dingledine2014tor}, Tor is an improved version of the Onion Routing anonymity protocol, which utilises multiple layers of encryption and hash checking to maintain authenticity and privacy during multi-hop routing. Rather than specialising for mailing anonymity, Tor is a generic protocol which can efficiently anonymise most TCP applications with minimal interfacing. In comparison with Onion Routing, Tor further implements perfect forward secrecy against replay attacks, allows hidden services to be hosted through in-network rendezvous, and is more resilient against de-anonymisation and denial-of-service active attacks by designating Guard Nodes and throttling. The Tor Browser Bundle provides excellent usability and additional protections against information leak to end users. The authors also noted the wider social impacts of anonymity systems. As an updated technical report, more up-to-date evaluations on network performance would have been a useful addition.
+
+Murdoch \cite{murdoch2006hot} introduced a covert channel attack based on clock skews caused by actively induced changes in system temperature. The temperature-sensitive nature of clock crystals in modern computers was utilised as side-channel information in this attack, which characterised constant and varying clock skews through linear fitting on data points obtained from TCP timestamps. Tested to be effective in identifying servers ultimately hosting hidden services, the attack can also be generalised for use against other anonymity systems. Murdoch also examined the possibility of facilitating across-air-gap information leakage and geolocation fixing with this attack's methodology. Finally, Murdoch concluded with discussions on possible mitigations and future work. While the Tor network did not directly influence components in the experiment, possible CPU interference from running periodic-task-heavy directory servers on the same hardware as Tor nodes, and more complex conditions in the noisy public network (e.g. BGP) could affect the accuracy of this attack in a real environment.
+
+\section{Key themes of research}
+
+\subsection{Active attacks pose a more tangible threat to anonymity systems}
+
+While the threat models of both Mixminion and Tor explicitly accept the inevitable feasibility of passive traffic-confirmation attacks by adversaries with sufficiently large surveillance power, extensive countermeasures had to be implemented in the protocols to protect against active attacks. Danezis et al. \cite[Sec. 2]{danezis2003mixminion} considered possible attacks from compromised nodes in prior protocols, and designed Mixminion to be resilient against tagging and replay attacks. Similarly, key rotation and designated Guard Nodes formed parts of an imperfect solution to active attacks in Tor \cite[Sec. 7]{dingledine2014tor}, still requiring additional tools to ensure anonymity. Some active attacks over unconventional channels can be even harder to mitigate, such as the clock skew-inducing attack by Murdoch \cite{murdoch2006hot}.
+
+\subsection{Usability is the key to the success of an anonymity system}
+
+A consensus among anonymity system developers is that it must be sufficiently easy for users to adapt to an anonymity system, and for node operators to minimise their risk from abuse. This was ingrained in Mixminion \cite[Sec. 3]{danezis2003mixminion} as a design goal, and was achieved in Tor through its browser bundle \cite[4.5]{dingledine2014tor}. Customisable exit policies to reduce abuse complaints are present in both systems \cite[5.3]{danezis2003mixminion}\cite[6.2]{dingledine2014tor}. Prohibitive cost of more stable OCXO clocks \cite[4.2]{murdoch2006hot} hinders a possible mitigation of Murdoch's attack. Additionally, good usability for both clients and node operators can encourage popularisation of the anonymity system, which may be important to security as discussed below.
+
+\subsection{Anonymity through herd effect}
+
+By design, anonymity of clients within such a system depend on significant variance in possible routes a connection can take, which requires large numbers of nodes and peers to be present in the network. It would be significantly easier for both passive and active attackers to de-anonymise users or disrupt operation in a smaller-than-designed network, as seen in Mixminion through low crossover depth \cite[4.3]{danezis2003mixminion}, and in Tor through compromised entry nodes \cite[Sec. 7]{dingledine2014tor}. Significant variance in routes may also complicate practical deployments of Murdoch's attack \cite{murdoch2006hot}.
+ 
+\section{Ideas in current context}
+
+Website fingerprinting was raised by Dingledine et al. \cite[Sec. 7]{dingledine2014tor} as a significant passive attack threat to Tor. The feasibility of website fingerprinting was systematically confirmed by Wang and Goldberg \cite{wang2016realistically} recently, following a long trail of researches in this area. Relatively effective server-side and client-side countermeasures to Tor website fingerprinting attacks have been developed by Cherubin et al. \cite{cherubin2017website}. This new arms race attracts further research.
+
+Tor introduced the capability for services with undisclosed origins to be hosted and accessed anonymously \cite[Sec. 5]{dingledine2014tor}. In addition to its intended use, the capabilities of hidden services led to various illicit websites being hosted within the Tor network. The most famous case was Silk Road, an illegal substance trading platform facilitated through cryptocurrencies. The platform was eventually took down and its owner arrested, however not due to effective attacks on the Tor network or even covert channel attacks like Murdoch's \cite{murdoch2006hot}, but rather through social engineering \cite{silkroad}. The ethics of provisioning hidden service technologies is under debate.
+
+Also designed to be a counter-censorship tool, the Tor network contains unannounced bridge nodes, whose connections can be obfuscated via pluggable transport (PT) tools \cite[p. 17]{dingledine2014tor}, which apply pseudo-random transformation or protocol mimicry to Tor traffic. A number of PT tools have been deployed and integrated into the browser bundle. However, Wang et al. \cite{wang2015seeing} demonstrated that all deployed PT's traffic can still be identified by censors with relatively trivial effort and false positive rate. My ongoing MPhil project looks further into the quality of PT obfuscations, and generalises attacks against these obfuscations.
+
+\section{Literature review}
+
+In addition to Tor \cite{dingledine2014tor} itself, the design of Mixminion \cite{danezis2003mixminion} has had lasting impact on many other anonymity systems and adversary researches thereof. Hopper et al. \cite{hopper2010much} noted some advantages of high-latency systems headed by Mixminion comparing to low-latency systems, as well as further efforts to improve their security. Danezis and Mittal \cite{danezis2009sybilinfer} later developed an algorithm to label nodes in a Mixminion-style network for likelihoods of control by an active attack adversary. Mixminion was also suggested by Ben-Sasson et al. \cite{sasson2014zerocash} as a possible additional anonymity layer in their anonymous Bitcoin ledger system.
+
+Dingledine et al. \cite{dingledine2014tor} very comprehensively considered possible attacks against Tor in their initial publication. New attacks within Tor's threat model emerged during more than a decade of use, including shared-path congestion analysis by Murdoch and Danezis \cite{murdoch2005low}, its bandwidth amplification variant by Evans et al. \cite{evans2009practical}, as well as a compromised exit node attack by Ling et al. \cite{ling2009new}. Other suggested uses for Tor's protocol design include anonymised malware infection reporting by Gu et al. \cite{gu2007bothunter}.
+
+Murdoch's covert channel attack \cite{murdoch2006hot} headed a set of side-channel active attacks against anonymity systems, as summarised by Zander et al. \cite{zander2007survey}. Eckersley \cite{eckersley2010unique} studied how measurable subtle variations exploited by these attacks can also be used for web browser fingerprinting. In developing wireless fingerprinting techniques, Desmond et al. \cite{desmond2008identifying} considered intentionally altering processor temperature as a mitigation to Murdoch's attack, conceptualising mitigations for other covert channel attacks.
+
+\emph{(1202 words according to texcount.)}
+
+\bibliographystyle{IEEEtran}
+\footnotesize{\bibliography{week5}}
+
+
+\end{document}
