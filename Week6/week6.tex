@@ -1,0 +1,61 @@
+\documentclass[11pt]{article}
+\usepackage{a4wide,parskip}
+\usepackage{hyperref}
+\usepackage{titlesec}
+
+\titleformat{\section}{\normalfont\fontsize{12}{15}\bfseries}{\thesection}{1em}{}
+
+\begin{document}
+
+\centerline{\Large R210 Essay:  Capability Systems}
+\vspace{2em}
+\centerline{\large Chongyang Shi (\emph{cs940})}
+\vspace{1em}
+\centerline{\large \today}
+\vspace{1em}
+
+\section{Summaries of research}
+
+Wagner and Tribble \cite{wagner2002security} reported findings from a limited-time security analysis on an early capability-based web browser \emph{DarpaBrowser}, designed to protect the browser and the underlying operating system from malicious renderers, as well as from the insecure web renderers are exposed to. Starting from the user perspective, they analysed the design and implementation of each layer of the capability system. Most severe vulnerabilities discovered in the system's design resulted from insufficient ``taming'' of the interoperable Java libraries, highlighting the potential security impacts of supporting legacy codebases. Significant vulnerabilities in the implementation were also revealed. While a vast majority of discovered vulnerabilities were relatively simple to fix, the authors highlighted their reservations about DarpaBrowser as a capability system due to limited analysis coverage and DarpaBrowser's flawed design. The authors' exemption of a focus-related vulnerability due to DarpaBrowser using a prior non-vulnerable version of Java SDK would not be seen as a reliable argument today.
+
+Watson et al. \cite{watson2010capsicum} designed and implemented a lightweight capability framework \emph{Capsicum}, which was shown to be easily integrable into a wide range of applications. As an extension to UNIX APIs, Capsicum could be integrated into existing applications with the choice of entering a capability mode or integrating with the userspace \emph{libcapsicum}. While some manual checking of delegated rights at runtime are still required to ensure security, Capsicum was shown in evaluations to require relatively minor code changes and produce low overheads, especially for applications already partially implementing sandboxing or privilege compartmentalisation, such as Chromium. In some cases, Capsicum outperformed existing sandbox APIs through efficient design, such as against \emph{setuid} in \emph{chroot}. A possible criticism regarding Capsicum's on-demand initialisation support is the lack of discussions on Capsicum's workarounds for compatibility issues other than DNS queries \cite[4.1]{watson2010capsicum}.
+
+A few years after the publication of Capsicum, Watson et al. \cite{watson2015cheri} reported the design and implementation of a compartmentalisation-based capability system CHERI, which spanned across the entire system stack, including a userspace library for application integration, a specialised LLVM compiler and kernel, and a FPGA coprocessor with CHERI-specific ISA. As a hybrid capability system, CHERI is scalable, and provides both excellent programmability and compartmentalisation guarantees, without significantly compromising performance. This was demonstrated with micro and macro-benchmarks against both non-compartmentalised systems and Capsicum, including on system applications adapted by both studies. While designed for unified protection, the authors acknowledged that future work was still needed to increase the CHERI stack's flexibility. The lack of Chromium as evaluated in Capsicum may have been a result of flexibility limitations.
+
+\section{Key themes of research}
+
+\subsection{Maintaining the principle of least privilege}
+
+One of the key underlying goals of capability systems is to maintain the principle of least privilege, which grants benefits by  limiting damages done both by malicious applications and by capabilities that can be insecurely delegated by vulnerable applications. As a web browser can be broadly delegated with the current user's capabilities while remain exposed to the insecure web, Wagner and Tribble \cite[4.1]{wagner2002security} recognised the need to minimise the browser's privileges through compartmentalisation. This was also the ultimate goal of Capsicum \cite[Sec. 1]{watson2010capsicum}, which implemented easy-to-adapt compartmentalisation. Capsicum's mitigation was further improved through more fine-grained compartmentalisation in CHERI \cite[Sec. II]{watson2015cheri}.
+
+\subsection{Backward compatibilities in capability systems are tricky}
+
+One of the primary obstacles and sources of vulnerability in capability systems is the need to support legacy and existing applications through backward compatibility. The ability of renderer developers to call existing Java libraries from within DarpaBrowser \cite[5.2]{wagner2002security} introduced many breakout vulnerabilities into the capability system, due to insufficient suppression and filtering on Java SDK's vast interfaces. Despite requiring application modifications, Capsicum \cite[Sec. 4]{watson2010capsicum} sought to minimise adaptation efforts by offering two modes of integration with varying capability implications. As a hardware-software hybrid capability system, CHERI \cite[Sec. IV]{watson2015cheri} provided specialised compiler and kernel to allow convenient mapping of C-language constructs to CHERI-compatible representations.
+
+\subsection{Choices and impacts in layer of capability system implementation}
+
+Vertically, capability systems presented in the three papers represented radically different approaches in choosing the insertion layer of capability implementation, with varied positive and negative impacts. DarpaBrowser \cite{wagner2002security} is language-based and operates on the application-level only, failing to anticipate vulnerable system calls available from the connected Java SDK. Capsicum \cite{watson2010capsicum} is primarily OS-based, offering low adaptation complexity but cannot support un-sandboxed applications requiring on-demand initialisation very well. CHERI \cite{watson2015cheri} however offers a hybrid language and OS-based full stack capability solution, addressing a lot of drawbacks encountered by DarpaBrowser and Capsicum.
+ 
+\section{Ideas in current context}
+
+Wagner and Tribble \cite[Sec. 3]{wagner2002security} speculated the dangers of browsers leaking authorities to a renderer exposed to the insecure web. This has since been validated in practice, as demonstrated in iOS 4.3's FreeType parser vulnerability, enabling a PDF downloaded by the web browser to gain arbitrary code execution privileges on the system and enable an iOS jailbreak through a kernel vulnerability \cite{ioscve}. Concurrency-related vulnerabilities in capability systems as discussed in the papers have also enabled a more recent jailbreak \cite{ianbeer}.
+
+In order to reduce adaptation complexity, Capsicum \cite{watson2010capsicum} avoided adopting a full message-passing model in compartmentalisation. Watson et al. however noted that mask rights can be further simplified in a pure message-passing capability system. This was realised in the design of Unikernels \cite{madhavapeddy2013unikernels}, which enforced type-safety through fully compartmentalising OCaml applications on the Xen hypervisor, with message-passing as the only form of communication. This approach of Unikernels however severely increases adaptation complexity.
+
+Capability systems are vulnerable to be the single point of failure as part of a complex system, preventing regular applications from functioning should they become faulty. This distinct risk was exhibited but not directly addressed in any of the papers \cite[Sec. 4.2]{wagner2002security} \cite[5.5]{watson2010capsicum} \cite[III. B.]{watson2015cheri}. However, it may be possible to address this problem through replicating capability systems and operating in conjunction with a consensus system such as ZooKeeper \cite{hunt2010zookeeper}, especially in multi-system environments.
+
+\section{Literature review}
+
+In analysing DarpaBrowser, Wagner and Tribble \cite[2.1]{wagner2002security} referred to the capability-based browser's protection against malicious renderers as a confinement mechanism, which was achieved through the elimination of reachability \cite[4.1]{wagner2002security}. This was further shown to be effectively enforceable by Miller et al. \cite{miller2003capability}. Miller and Shapiro \cite{miller2003paradigm} also extended DarpaBrowser's capability model into an abstraction for access control systems. DarpaBrowser's language-based capability control on Java was also an inspiration for a recent compartmentalisation reasoning tool by Gudka et al. \cite{gudka2015clean}.
+
+In addition to providing ideas and performance references for the later CHERI \cite{woodruff2014cheri, watson2015cheri}, Capsicum also inspired a direction of future work in enabling permission dropping in an Android-based capability system by Backes et al. \cite{backes2015boxify}. Capsicum's language-dependent capability abstraction was described as lacking in portability for Ansel and Marchenko's \cite{ansel2011language} language-independent software sandboxing design. It was also suggested as a possible OS protection module for the two-way sandboxing system by Li et al. \cite{li2014minibox}.
+
+In developing a control-hijacking attack against control flow integrity-checking systems, Evans et al. \cite{backes2015boxify} noted CHERI's capability-based tagging as a possible mitigation that could achieve complete memory safety. This was also suggested in a related research by Evans et al. \cite{evans2015missing} in their attack against code pointer integrity-checking systems. CHERI's capability-compatible C implementation was also used as a testing platform for the formal model of C by Memarian et al. \cite{memarian2016into}, identifying several possible design and implementation drawbacks in CHERI. A light-weight context-based OS abstraction system for privilege separation was developed by Litton et al. \cite{litton2016light} as an alternative to CHERI.
+
+\emph{(1174 words according to texcount.)}
+
+\bibliographystyle{IEEEtran}
+\footnotesize{\bibliography{week6}}
+
+
+\end{document}
